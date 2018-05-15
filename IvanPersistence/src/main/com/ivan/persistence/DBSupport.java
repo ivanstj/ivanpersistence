@@ -106,6 +106,65 @@ protected static List getDatas(String id, Map constraint)
     }
   }
 
+@SuppressWarnings({ "finally", "unchecked", "rawtypes" })
+protected static List getDatasByLimit(String id, Map constraint, int startPosition, int limit)
+  {
+    List<Map<String, String>> datas = new ArrayList();
+    Map<String, String> mapConstraint = new HashMap();
+    if (constraint != null) {
+      mapConstraint = constraint;
+    }
+    Connection connection = getConnection(getConnectionXml());
+    try
+    {
+     
+      Statement stmt = connection.createStatement();
+      String query = XMLReader.getQuery(id,getQueryXml());
+      query = query + " limit "+Integer.toString(startPosition)+","+Integer.toString(limit);
+      logger.info("Query : ");
+      logger.info(query);
+      if (mapConstraint.keySet() != null)
+      {
+        Set<String> keysString = mapConstraint.keySet();
+        String[] keys = (String[])keysString.toArray(new String[keysString.size()]);
+        for (int i = 0; i < keys.length; i++)
+        {
+          String key = keys[i];
+          if(query.contains(":"+key)&&query.contains("#"+key)){
+        	  throw new Exception("Error caused same id in key "+key);
+          }
+          
+          query = query.replaceAll(":" + key, "'" + (String)mapConstraint.get(key) + "'").replaceAll("#" + key, (String)mapConstraint.get(key));
+        }
+      }
+      logger.info("Executing query...");
+      ResultSet rs = stmt.executeQuery(query);
+      
+      ResultSetMetaData rsmd = rs.getMetaData();
+      
+      int columnsNumber = rsmd.getColumnCount();
+      while (rs.next())
+      {
+        Map<String, String> data = new HashMap();
+        for (int i = 1; i <= columnsNumber; i++) {
+          data.put(rsmd.getColumnLabel(i), rs.getString(i));
+        }
+        datas.add(data);
+      }
+      connection.close();
+    }
+    catch (Exception e)
+    {
+      logger.info(e.toString());
+      e.printStackTrace();
+      connection.close();
+    }
+    finally
+    {
+      return datas;
+    }
+  }
+
 
   @SuppressWarnings("unchecked")
 private static Connection getConnection(String connectionXml)
