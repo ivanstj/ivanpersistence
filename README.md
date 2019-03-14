@@ -1,2 +1,2 @@
 # ivanpersistence
-Java Sql Plugin (Using XML)
+Java SQL Plugin (Using XML)
